@@ -1,0 +1,17 @@
+{
+    "name": "gturpin/spotify",
+    "autoload": {
+        "psr-4": {
+            "Gturpin\\Spotify\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "gturpin-dev",
+            "email": "guillaume.turpin45@gmail.com"
+        }
+    ],
+    "require": {
+        "jwilsson/spotify-web-api-php": "^5.0"
+    }
+}
