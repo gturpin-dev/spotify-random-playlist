@@ -30,6 +30,7 @@ $artist_ids = array_map( function( $artist ) {
 function get_random_tracks_artists( SpotifyWebAPI\SpotifyWebAPI $api, array $artist_ids, int $tracks_per_artist = 5 ) {
 	$playlist_tracks  = [];
 
+	$artist_index = 0;
 	foreach ( $artist_ids as $artist_id ) {
 		$track_ids = [];
 
@@ -64,7 +65,15 @@ function get_random_tracks_artists( SpotifyWebAPI\SpotifyWebAPI $api, array $art
 		
 		// add tracks to the playlist
 		$playlist_tracks = array_merge( $playlist_tracks, $track_ids );
+
+		$artist_index++;
+		if ( $artist_index >= 2 ) {
+			$artist_index = 0;
+			sleep( 30 );
+		}
 	}
+
+	shuffle( $playlist_tracks );
 
 	return $playlist_tracks;
 }
@@ -78,10 +87,13 @@ function get_random_tracks_artists( SpotifyWebAPI\SpotifyWebAPI $api, array $art
  * @return void
  */
 function delete_playlist_tracks( SpotifyWebAPI\SpotifyWebAPI $api, string $playlist_id ) {
+	$playlist = $api->getPlaylist( $playlist_id );
+	$snapshot = $playlist->snapshot_id;
+
 	$tracks = $api->getPlaylistTracks( $playlist_id, [
 		'limit' => 50,
 	] );
-	
+
 	if ( $tracks->total == 0 ) return;
 
 	$tracks = $tracks->items;
@@ -89,16 +101,17 @@ function delete_playlist_tracks( SpotifyWebAPI\SpotifyWebAPI $api, string $playl
 	// match the needed format for the deletePlaylistTracks method
 	$tracks_to_delete = [];
 	foreach ( $tracks as $track ) {
-		$tracks_to_delete[ 'tracks' ][] = $track->track;
+		$tracks_to_delete[ 'tracks' ][] = [ 'uri' => $track->track->uri ];
 	}
+	
+	echo '<pre>' . print_r( $tracks_to_delete, 1 ) . '</pre>';
+	// die;
 
-	$test = $api->deletePlaylistTracks( $playlist_id, $tracks_to_delete );
+	$test = $api->deletePlaylistTracks( $playlist_id, $tracks_to_delete, $snapshot );
 }
 
-delete_playlist_tracks( $api, $custom_playlist_id );
-var_dump('TEST');
-die();
+delete_playlist_tracks( $api, $custom_playlist_id ); // TODO: to replace with replacePlaylistTracks( $playlist_id, $tracks_ids )
 $random_tracks = get_random_tracks_artists( $api, $artist_ids, $tracks_per_artist );
 $playlist_id   = $api->addPlaylistTracks( $custom_playlist_id, $random_tracks );
 
-var_dump( $playlist_id );
+// var_dump( $playlist_id );
