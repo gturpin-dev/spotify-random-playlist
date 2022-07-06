@@ -14,6 +14,23 @@ $custom_playlist_id = get_field( 'spotify_custom_playlist_id', 'user_' . $curren
 $tracks_per_artist  = (int) get_field( 'spotify_tracks_per_artist', 'user_' . $current_user_id );
 $artist_ids         = get_field( 'spotify_artists', 'user_' . $current_user_id );
 
+$API_CALLS = 0;
+
+function check_api_rate_limit() {
+	global $API_CALLS;
+	$API_CALLS++;
+	var_dump( $API_CALLS );
+	
+	$max_calls         = 100;
+	$refresh_rate_time = 30;
+
+	if ( $API_CALLS >= ( $max_calls - 1 ) ) {
+		var_dump('SLEEP');
+		sleep( $refresh_rate_time );
+		$API_CALLS = 0;
+	}
+}
+
 $artist_ids = array_map( function( $artist ) {
 	return $artist['spotify_artist_id'];
 }, $artist_ids );
@@ -28,7 +45,7 @@ $artist_ids = array_map( function( $artist ) {
  * @return array Array of track ids
  */
 function get_random_tracks_artists( SpotifyWebAPI\SpotifyWebAPI $api, array $artist_ids, int $tracks_per_artist = 5 ) {
-	$playlist_tracks  = [];
+	$playlist_tracks = [];
 
 	$artist_index = 0;
 	foreach ( $artist_ids as $artist_id ) {
@@ -39,6 +56,7 @@ function get_random_tracks_artists( SpotifyWebAPI\SpotifyWebAPI $api, array $art
 			'limit'   => 50,
 			'country' => 'FR'
 		] );
+		check_api_rate_limit();
 	
 		// go to next artist if no albums
 		if ( $artist_albums->total == 0 ) continue;
@@ -49,6 +67,8 @@ function get_random_tracks_artists( SpotifyWebAPI\SpotifyWebAPI $api, array $art
 			$tracks        = $api->getAlbumTracks( $album->id, [
 				'limit' => 50,
 			] );
+			check_api_rate_limit();
+
 			$tracks        = $tracks->items;
 			$artist_tracks = array_merge( $artist_tracks, $tracks );
 		}
@@ -67,10 +87,6 @@ function get_random_tracks_artists( SpotifyWebAPI\SpotifyWebAPI $api, array $art
 		$playlist_tracks = array_merge( $playlist_tracks, $track_ids );
 
 		$artist_index++;
-		if ( $artist_index >= 2 ) {
-			$artist_index = 0;
-			sleep( 30 );
-		}
 	}
 
 	shuffle( $playlist_tracks );
@@ -88,11 +104,14 @@ function get_random_tracks_artists( SpotifyWebAPI\SpotifyWebAPI $api, array $art
  */
 function delete_playlist_tracks( SpotifyWebAPI\SpotifyWebAPI $api, string $playlist_id ) {
 	$playlist = $api->getPlaylist( $playlist_id );
+	check_api_rate_limit();
+	
 	$snapshot = $playlist->snapshot_id;
 
 	$tracks = $api->getPlaylistTracks( $playlist_id, [
 		'limit' => 50,
 	] );
+	check_api_rate_limit();
 
 	if ( $tracks->total == 0 ) return;
 
@@ -104,10 +123,8 @@ function delete_playlist_tracks( SpotifyWebAPI\SpotifyWebAPI $api, string $playl
 		$tracks_to_delete[ 'tracks' ][] = [ 'uri' => $track->track->uri ];
 	}
 	
-	echo '<pre>' . print_r( $tracks_to_delete, 1 ) . '</pre>';
-	// die;
-
-	$test = $api->deletePlaylistTracks( $playlist_id, $tracks_to_delete, $snapshot );
+	$api->deletePlaylistTracks( $playlist_id, $tracks_to_delete, $snapshot );
+	check_api_rate_limit();
 }
 
 delete_playlist_tracks( $api, $custom_playlist_id ); // TODO: to replace with replacePlaylistTracks( $playlist_id, $tracks_ids )

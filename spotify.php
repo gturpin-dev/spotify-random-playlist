@@ -23,7 +23,6 @@ add_action( 'acf/init', function() {
 	] );
 
 	if ( $_SERVER['REQUEST_URI'] === '/spotify-credentials/' ) {
-	// if ( strpos( $_SERVER['REQUEST_URI'], 'spotify-credentials' ) !== false ) {
 		spotify_auth();
 	}
 } );
