@@ -120,9 +120,9 @@
     "location": [
         [
             {
-                "param": "options_page",
+                "param": "user_form",
                 "operator": "==",
-                "value": "spotify-credentials"
+                "value": "edit"
             }
         ]
     ],
@@ -135,5 +135,5 @@
     "active": true,
     "description": "",
     "show_in_rest": 0,
-    "modified": 1657126963
+    "modified": 1657182882
 }
