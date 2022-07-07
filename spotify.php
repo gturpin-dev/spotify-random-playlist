@@ -1,5 +1,4 @@
 <?php 
-
 /**
 * Plugin Name: Spotify Random Playlist
 * Plugin URI: https://github.com/gturpin-dev/spotify-random-playlist
@@ -9,17 +8,14 @@
 * Author URI: https://github.com/gturpin-dev
 **/
 
+use Gturpin\Spotify\Core;
+use Gturpin\Spotify\admin\OptionPage;
+
 require_once __DIR__ . '/vendor/autoload.php';
 
-add_action( 'acf/init', function() {
-	acf_add_options_page( [
-		'page_title' => __( 'Spotify Credentials', 'aipals' ),
-		'menu_title' => __( 'Spotify Credentials', 'aipals' ),
-		'menu_slug'  => 'spotify-credentials',
-		'capability' => 'administrator',
-		'redirect'   => false
-	] );
-} );
+$plugin = Core::get_instance( __FILE__ );
+
+new OptionPage();
 
 add_filter( 'acf/settings/save_json', function( $path ) {
 	$path = plugin_dir_path( __FILE__ ) . 'acf-sync';
@@ -35,9 +31,6 @@ add_filter( 'acf/settings/load_json', function( $paths ) {
 	
 	return $paths;
 } );
-
-add_action( 'show_user_profile', 'extra_user_profile_fields' );
-add_action( 'edit_user_profile', 'extra_user_profile_fields' );
 
 function extra_user_profile_fields( $user ) { 
 	echo "<h2>". __( 'Spotify auth', 'spotify' ) . "</h2>";
@@ -82,6 +75,19 @@ function extra_user_profile_fields( $user ) {
 		echo '<a href="' . esc_url( $oauth_url ) . '">link my spotify account</a>';
 	}
 }
+add_action( 'show_user_profile', 'extra_user_profile_fields' );
+add_action( 'edit_user_profile', 'extra_user_profile_fields' );
+
+add_action( 'rest_api_init', function() {
+	register_rest_route( 
+		'spotify/v1', 
+		'/auth_callback', 
+		[
+			'methods'  => 'GET',
+			'callback' => 'gt_spotify_auth_callback'
+		] 
+	);
+} );
 
 function gt_spotify_auth_callback( \WP_REST_Request $rest_request ) {
 	$code  = $rest_request->get_param( 'code' );
@@ -115,14 +121,3 @@ function gt_spotify_auth_callback( \WP_REST_Request $rest_request ) {
 	wp_safe_redirect( $redirect_after_auth );
 	exit;
 }
-
-add_action( 'rest_api_init', function() {
-	register_rest_route( 
-		'spotify/v1', 
-		'/auth_callback', 
-		[
-			'methods'  => 'GET',
-			'callback' => 'gt_spotify_auth_callback'
-		] 
-	);
-} );
