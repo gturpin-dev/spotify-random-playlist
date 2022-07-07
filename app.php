@@ -5,6 +5,16 @@ require( $path_WP . '/wp-load.php' );
 
 require_once __DIR__ . '/vendor/autoload.php';
 
+// Checker ça pour faire un try catch générique avant chaque début de call https://github.com/jwilsson/spotify-web-api-php/blob/main/docs/examples/refreshing-access-tokens.md#with-an-existing-refresh-token
+// Créer un CRON qui passe toutes les 5min pour indexer en BD les données de chaque artiste spotify, pour éviter le sleep et éviter la rate limit
+// Auth et Auth_callback doivent être appelés une seule fois par user ( parceque c'est juste pour la connexion spotify a ton app )
+// Regrouper ces fonctions dans un objet pour l'app, qui sera appelé que si l'user est co, et n'a pas encore d'access token
+// Créer une route rest pour cet Auth + une pour le callback de spotify
+// Déplacer les tokens dans le compte user et linker les get_field
+// Créer un bouton dans une page option pour simuler le cron et donc mettre en base l'indexation des artistes
+// Permettre pour chaque artiste de refresh l'indexation ( exemple si il a un nouvel album )
+
+
 $access_token = get_field( 'spotify_access_token', 'option' );
 $api          = new SpotifyWebAPI\SpotifyWebAPI();
 $api->setAccessToken( $access_token );
@@ -19,13 +29,11 @@ $API_CALLS = 0;
 function check_api_rate_limit() {
 	global $API_CALLS;
 	$API_CALLS++;
-	var_dump( $API_CALLS );
 	
 	$max_calls         = 100;
 	$refresh_rate_time = 30;
 
 	if ( $API_CALLS >= ( $max_calls - 1 ) ) {
-		var_dump('SLEEP');
 		sleep( $refresh_rate_time );
 		$API_CALLS = 0;
 	}

@@ -26,3 +26,19 @@ add_action( 'acf/init', function() {
 		spotify_auth();
 	}
 } );
+
+
+add_filter( 'acf/settings/save_json', function( $path ) {
+	$path = plugin_dir_path( __FILE__ ) . 'acf-sync';
+
+	return $path;
+} );
+
+add_filter( 'acf/settings/load_json', function( $paths ) {
+	// remove original path
+    unset( $paths[0] );
+    
+    $paths[] = plugin_dir_path( __FILE__ ) . 'acf-sync';
+	
+	return $paths;
+} );
