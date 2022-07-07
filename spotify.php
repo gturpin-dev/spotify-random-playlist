@@ -1,12 +1,12 @@
 <?php 
 
 /**
-* Plugin Name: Spotify
-* Plugin URI: https://www.yourwebsiteurl.com/
-* Description: spotify
+* Plugin Name: Spotify Random Playlist
+* Plugin URI: https://github.com/gturpin-dev/spotify-random-playlist
+* Description: Generate a random playlist from a list of artists.
 * Version: 1.0
-* Author: Your Name Here
-* Author URI: http://yourwebsiteurl.com/
+* Author: Guillaume TURPIN
+* Author URI: https://github.com/gturpin-dev
 **/
 
 require_once __DIR__ . '/vendor/autoload.php';
