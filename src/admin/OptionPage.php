@@ -39,6 +39,8 @@ class OptionPage {
 		// add_action( 'admin_init', [ $this, 'register_settings_fields' ] );
 
 		add_action( 'admin_post_spotify_processing_cache_tracks', [ $this, 'processing_cache_tracks' ] );
+
+		add_action( 'admin_post_spotify_generate_random_playlist', [ $this, 'generate_random_playlist' ] );
 	}
 
 	/**
@@ -62,12 +64,33 @@ class OptionPage {
 	 *
 	 * @return void
 	 */
-	function processing_cache_tracks() {
+	public function processing_cache_tracks() {
 		$referer = wp_get_referer();
 
 		$playlist_maker = new PlaylistMaker();
-		$playlist_maker->processing_cache_tracks();
+		$test = $playlist_maker->processing_cache_tracks();
 
+		who_logr( 'status : ' . $test );
+
+		wp_safe_redirect( $referer );
+		exit();
+	}
+
+	/**
+	 * Generate a random playlist from the artists' tracks stored locally
+	 *
+	 * @return void
+	 */
+	public function generate_random_playlist() {
+		$referer           = wp_get_referer();
+		$user_id           = get_current_user_id();
+		$tracks_per_artist = (int) get_field( 'spotify_tracks_per_artist', 'user_' . $user_id ) ?: 5;
+		$playlist_id	   = get_field( 'spotify_custom_playlist_id', 'user_' . $user_id );
+
+		$playlist_maker = new PlaylistMaker();
+		$random_tracks  = $playlist_maker->get_random_tracks( $tracks_per_artist );
+		$playlist_maker->override_playlist( $playlist_id, $random_tracks );
+		
 		wp_safe_redirect( $referer );
 		exit();
 	}
@@ -100,7 +123,7 @@ class OptionPage {
 				</form>
 
 				<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-					<input type="hidden" name="action" value="spotify_generate_playlist">
+					<input type="hidden" name="action" value="spotify_generate_random_playlist">
 
 					<p class="submit">
 						<input type="submit" class="button button-primary" value="<?php _e( 'Generate a Playlist' ) ?>">
